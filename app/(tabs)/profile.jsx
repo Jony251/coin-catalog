@@ -146,7 +146,7 @@ export default function ProfileScreen() {
 
       {/* Version */}
       <Text style={styles.version}>Версия 1.0.0</Text>
-      <Text style={styles.copyright}>Каталог монет Царской России</Text>
+      <Text style={styles.copyright}>Каталог монет</Text>
     </View>
   );
 }

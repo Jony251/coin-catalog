@@ -75,7 +75,7 @@ export default function RulerScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: bottomPadding }}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: 180 }}>
       {/* Ruler header with image */}
       <View style={styles.headerContainer}>
         <View style={styles.rulerImageContainer}>
@@ -164,13 +164,15 @@ export default function RulerScreen() {
       </ScrollView>
 
       {/* Fixed button at bottom */}
-      <TouchableOpacity
-        style={[styles.viewAllButton, { bottom: bottomPadding }]}
-        onPress={() => router.push(`/ruler/${id}/coins`)}
-      >
-        <Text style={styles.viewAllButtonText}>Все монеты правителя</Text>
-        <Ionicons name="arrow-forward" size={20} color="#fff" />
-      </TouchableOpacity>
+      <View style={[styles.fixedButtonContainer, { paddingBottom: bottomPadding }]}>
+        <TouchableOpacity
+          style={styles.viewAllButton}
+          onPress={() => router.push(`/ruler/${id}/coins`)}
+        >
+          <Text style={styles.viewAllButtonText}>Все монеты правителя</Text>
+          <Ionicons name="arrow-forward" size={20} color="#fff" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -326,10 +328,23 @@ const styles = StyleSheet.create({
     color: '#888',
     marginTop: 10,
   },
-  viewAllButton: {
+  fixedButtonContainer: {
     position: 'absolute',
-    left: 10,
-    right: 10,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  viewAllButton: {
     flexDirection: 'row',
     backgroundColor: '#B8860B',
     padding: 15,

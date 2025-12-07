@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
   },
   coinsContent: {
     padding: 10,
-    paddingBottom: 20,
+    paddingBottom: 100,
     flexGrow: 1,
   },
   coinCard: {

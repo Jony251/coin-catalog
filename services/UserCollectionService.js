@@ -232,37 +232,67 @@ class UserCollectionService {
   async removeCoin(catalogCoinId) {
     if (!this.isInitialized) await this.initialize();
 
-    if (this.isWeb) {
-      const coin = this.webStorage.userCoins.find(c => c.catalogCoinId === catalogCoinId);
-      
-      this.webStorage.userCoins = this.webStorage.userCoins.filter(
-        c => c.catalogCoinId !== catalogCoinId
-      );
-      this._saveWebStorage();
-      
-      // TODO: Синхронизация с сервером (отправить удаление)
-      if (coin) {
-        coin.markAsDeleted();
-        await this._syncToServer(coin);
-      }
-    } else {
-      const row = await this.db.getFirstAsync(
-        'SELECT * FROM user_coins WHERE catalogCoinId = ?',
-        [catalogCoinId]
-      );
-      
-      if (row) {
-        const coin = UserCoin.fromDatabase(row);
-        coin.markAsDeleted();
+    try {
+      if (this.isWeb) {
+        const coin = this.webStorage.userCoins.find(c => c.catalogCoinId === catalogCoinId);
         
-        // TODO: Синхронизация с сервером
-        await this._syncToServer(coin);
+        this.webStorage.userCoins = this.webStorage.userCoins.filter(
+          c => c.catalogCoinId !== catalogCoinId
+        );
+        this._saveWebStorage();
+        
+        // TODO: Синхронизация с сервером (отправить удаление)
+        if (coin) {
+          try {
+            coin.markAsDeleted();
+            await this._syncToServer(coin);
+          } catch (syncError) {
+            console.warn('Sync error on remove (web):', syncError.message);
+          }
+        }
+      } else {
+        // Проверяем что БД доступна
+        if (!this.db) {
+          console.error('Database not initialized');
+          return;
+        }
+
+        let row = null;
+        try {
+          row = await this.db.getFirstAsync(
+            'SELECT * FROM user_coins WHERE catalogCoinId = ?',
+            [catalogCoinId]
+          );
+        } catch (error) {
+          console.error('Error fetching coin for removal:', error);
+        }
+        
+        // Сначала удаляем из БД
+        try {
+          await this.db.runAsync(
+            'DELETE FROM user_coins WHERE catalogCoinId = ?',
+            [catalogCoinId]
+          );
+        } catch (error) {
+          console.error('Error deleting coin from database:', error);
+          throw error;
+        }
+        
+        // Потом пытаемся синхронизировать (если нужно)
+        if (row) {
+          try {
+            const coin = UserCoin.fromDatabase(row);
+            coin.markAsDeleted();
+            await this._syncToServer(coin);
+          } catch (syncError) {
+            console.warn('Sync error on remove:', syncError.message);
+            // Не бросаем ошибку - монета уже удалена локально
+          }
+        }
       }
-      
-      await this.db.runAsync(
-        'DELETE FROM user_coins WHERE catalogCoinId = ?',
-        [catalogCoinId]
-      );
+    } catch (error) {
+      console.error('Error removing coin:', error);
+      throw error;
     }
   }
 
@@ -272,38 +302,45 @@ class UserCollectionService {
   async getUserCoins(isWishlist = false) {
     if (!this.isInitialized) await this.initialize();
 
-    if (this.isWeb) {
-      const userCoins = this.webStorage.userCoins.filter(uc => 
-        uc.isWishlist === isWishlist && !uc.isDeleted
-      );
-      
-      // Обогащаем данными из каталога
-      const enrichedCoins = await Promise.all(
-        userCoins.map(async (uc) => {
-          const catalogCoin = await databaseService.getCoinById(uc.catalogCoinId);
-          return new UserCoin({
-            ...uc,
-            catalogCoin,
-          });
-        })
-      );
-      
-      return enrichedCoins.sort((a, b) => b.createdAt - a.createdAt);
-    } else {
-      const rows = await this.db.getAllAsync(
-        `SELECT 
-          uc.*,
-          c.id as coin_id, c.rulerId, c.catalogNumber, c.name, c.nameEn, c.year,
-          c.denomination, c.denominationValue, c.currency, c.metal, c.weight,
-          c.diameter, c.mint, c.mintMark, c.mintage, c.rarity, c.rarityScore,
-          c.estimatedValueMin, c.estimatedValueMax, c.obverseImage, c.reverseImage,
-          c.description
-         FROM user_coins uc
-         JOIN catalog_coins c ON uc.catalogCoinId = c.id
-         WHERE uc.isWishlist = ? AND uc.isDeleted = 0
-         ORDER BY uc.createdAt DESC`,
-        [isWishlist ? 1 : 0]
-      );
+    try {
+      if (this.isWeb) {
+        const userCoins = this.webStorage.userCoins.filter(uc => 
+          uc.isWishlist === isWishlist && !uc.isDeleted
+        );
+        
+        // Обогащаем данными из каталога
+        const enrichedCoins = await Promise.all(
+          userCoins.map(async (uc) => {
+            const catalogCoin = await databaseService.getCoinById(uc.catalogCoinId);
+            return new UserCoin({
+              ...uc,
+              catalogCoin,
+            });
+          })
+        );
+        
+        return enrichedCoins.sort((a, b) => b.createdAt - a.createdAt);
+      } else {
+        // Проверяем что БД доступна
+        if (!this.db) {
+          console.error('Database not initialized in getUserCoins');
+          return [];
+        }
+
+        const rows = await this.db.getAllAsync(
+          `SELECT 
+            uc.*,
+            c.id as coin_id, c.rulerId, c.catalogNumber, c.name, c.nameEn, c.year,
+            c.denomination, c.denominationValue, c.currency, c.metal, c.weight,
+            c.diameter, c.mint, c.mintMark, c.mintage, c.rarity, c.rarityScore,
+            c.estimatedValueMin, c.estimatedValueMax, c.obverseImage, c.reverseImage,
+            c.description
+           FROM user_coins uc
+           JOIN catalog_coins c ON uc.catalogCoinId = c.id
+           WHERE uc.isWishlist = ? AND uc.isDeleted = 0
+           ORDER BY uc.createdAt DESC`,
+          [isWishlist ? 1 : 0]
+        );
       
       return rows.map(row => {
         const userCoin = UserCoin.fromDatabase(row);
@@ -333,6 +370,10 @@ class UserCollectionService {
         };
         return userCoin;
       });
+      }
+    } catch (error) {
+      console.error('Error getting user coins:', error);
+      return [];
     }
   }
 
@@ -342,24 +383,35 @@ class UserCollectionService {
   async isInCollection(catalogCoinId) {
     if (!this.isInitialized) await this.initialize();
 
-    if (this.isWeb) {
-      const owned = this.webStorage.userCoins.find(
-        c => c.catalogCoinId === catalogCoinId && !c.isWishlist && !c.isDeleted
-      );
-      const wishlisted = this.webStorage.userCoins.find(
-        c => c.catalogCoinId === catalogCoinId && c.isWishlist && !c.isDeleted
-      );
-      return { owned: !!owned, wishlisted: !!wishlisted };
-    } else {
-      const owned = await this.db.getFirstAsync(
-        'SELECT id FROM user_coins WHERE catalogCoinId = ? AND isWishlist = 0 AND isDeleted = 0',
-        [catalogCoinId]
-      );
-      const wishlisted = await this.db.getFirstAsync(
-        'SELECT id FROM user_coins WHERE catalogCoinId = ? AND isWishlist = 1 AND isDeleted = 0',
-        [catalogCoinId]
-      );
-      return { owned: !!owned, wishlisted: !!wishlisted };
+    try {
+      if (this.isWeb) {
+        const owned = this.webStorage.userCoins.find(
+          c => c.catalogCoinId === catalogCoinId && !c.isWishlist && !c.isDeleted
+        );
+        const wishlisted = this.webStorage.userCoins.find(
+          c => c.catalogCoinId === catalogCoinId && c.isWishlist && !c.isDeleted
+        );
+        return { owned: !!owned, wishlisted: !!wishlisted };
+      } else {
+        // Проверяем что БД доступна
+        if (!this.db) {
+          console.error('Database not initialized in isInCollection');
+          return { owned: false, wishlisted: false };
+        }
+
+        const owned = await this.db.getFirstAsync(
+          'SELECT id FROM user_coins WHERE catalogCoinId = ? AND isWishlist = 0 AND isDeleted = 0',
+          [catalogCoinId]
+        );
+        const wishlisted = await this.db.getFirstAsync(
+          'SELECT id FROM user_coins WHERE catalogCoinId = ? AND isWishlist = 1 AND isDeleted = 0',
+          [catalogCoinId]
+        );
+        return { owned: !!owned, wishlisted: !!wishlisted };
+      }
+    } catch (error) {
+      console.error('Error checking collection:', error);
+      return { owned: false, wishlisted: false };
     }
   }
 

@@ -6,9 +6,11 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCoinsByRuler, getRulerById, isInCollection, addToCollection } from '../../../services/database';
 import { useAuthStore } from '../../../stores/authStore';
 
@@ -16,6 +18,7 @@ export default function RulerCoinsScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const isGuest = useAuthStore((state) => state.isGuest);
+  const insets = useSafeAreaInsets();
   
   const [ruler, setRuler] = useState(null);
   const [coins, setCoins] = useState([]);
@@ -172,7 +175,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 10,
-    paddingBottom: 80,
+    paddingBottom: 100,
   },
   coinCard: {
     flexDirection: 'row',
