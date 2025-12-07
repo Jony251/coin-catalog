@@ -9,7 +9,8 @@
     "web": "expo start --web",
     "server": "node server/index.js",
     "db:install": "node database/install.js",
-    "db:install:seed": "node database/install.js --seed"
+    "db:install:seed": "node database/install.js --seed",
+    "download:images": "node scripts/download_images.js"
   },
   "type": "module",
   "dependencies": {

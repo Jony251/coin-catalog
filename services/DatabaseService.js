@@ -94,7 +94,7 @@ class DatabaseService {
       -- Правители
       CREATE TABLE IF NOT EXISTS rulers (
         id TEXT PRIMARY KEY,
-        periodId TEXT NOT NULL,
+        periodId TEXT,
         name TEXT NOT NULL,
         nameEn TEXT,
         title TEXT,
@@ -155,7 +155,7 @@ class DatabaseService {
    * Проверка версии БД и заполнение данными
    */
   async _checkAndSeedDatabase() {
-    const DB_VERSION = 3; // Новая версия с Country и Period
+    const DB_VERSION = 4; // Исправлена схема: periodId теперь опциональный
     
     const versionRow = await this.db.getFirstAsync(
       'SELECT value FROM db_metadata WHERE key = ?', 
@@ -176,9 +176,20 @@ class DatabaseService {
     await this.db.execAsync('BEGIN TRANSACTION');
     
     try {
-      // Очищаем старые данные
-      await this.db.runAsync('DELETE FROM catalog_coins');
-      await this.db.runAsync('DELETE FROM rulers');
+      // Пересоздаём таблицы для версии 4
+      if (toVersion >= 4) {
+        await this.db.runAsync('DROP TABLE IF EXISTS catalog_coins');
+        await this.db.runAsync('DROP TABLE IF EXISTS rulers');
+        await this.db.runAsync('DROP TABLE IF EXISTS periods');
+        await this.db.runAsync('DROP TABLE IF EXISTS countries');
+        
+        // Создаём таблицы заново
+        await this._createTables();
+      } else {
+        // Очищаем старые данные
+        await this.db.runAsync('DELETE FROM catalog_coins');
+        await this.db.runAsync('DELETE FROM rulers');
+      }
       
       // Создаём новую структуру
       await this._seedCountriesAndPeriods();

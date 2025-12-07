@@ -4,7 +4,7 @@
 export class Ruler {
   constructor(data) {
     this.id = data.id;
-    this.periodId = data.periodId;
+    this.periodId = data.periodId || null;
     this.name = data.name;
     this.nameEn = data.nameEn;
     this.title = data.title || null;
