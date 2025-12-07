@@ -9,6 +9,7 @@ const rulerImages = {
   catherine1: require('../assets/images/rulers/catherine1.jpg'),
   peter2: require('../assets/images/rulers/peter2.jpg'),
   anna: require('../assets/images/rulers/anna.jpg'),
+  ivan6: require('../assets/images/rulers/ivan6.jpg'),
   elizabeth: require('../assets/images/rulers/elizabeth.jpg'),
   peter3: require('../assets/images/rulers/peter3.jpg'),
   catherine2: require('../assets/images/rulers/catherine2.jpg'),

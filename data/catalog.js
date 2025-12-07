@@ -2,6 +2,7 @@
 
 import { extendedCoins } from './coins_extended';
 import { extendedCoinsPart2 } from './coins_part2';
+import { getRulerImage } from '../utils/images';
 
 export const catalogData = {
   rulers: [

@@ -14,6 +14,7 @@ import { useRouter, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getRulers, searchCoins } from '../../services/database';
 import { useAuthStore } from '../../stores/authStore';
+import { getRulerImage } from '../../utils/images';
 
 const { width } = Dimensions.get('window');
 const isWeb = Platform.OS === 'web';
@@ -91,7 +92,8 @@ export default function CatalogScreen() {
 
   // Render ruler card in grid
   const renderRulerCard = ({ item }) => {
-    const imageError = failedImages[item.id];
+    // Get local image source (with fallback to URL)
+    const imageSource = getRulerImage(item.id, item.imageUrl);
     
     return (
       <TouchableOpacity
@@ -99,22 +101,11 @@ export default function CatalogScreen() {
         onPress={() => router.push(`/ruler/${item.id}`)}
       >
         <View style={styles.rulerImageContainer}>
-          {item.imageUrl && !imageError ? (
-            <Image 
-              source={{ 
-                uri: item.imageUrl,
-                headers: {
-                  'User-Agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36'
-                }
-              }} 
-              style={styles.rulerImage}
-              onError={() => setFailedImages(prev => ({ ...prev, [item.id]: true }))}
-            />
-          ) : (
-            <View style={styles.rulerImagePlaceholder}>
-              <Ionicons name="person" size={isWeb ? 35 : 50} color="#B8860B" />
-            </View>
-          )}
+          <Image 
+            source={imageSource}
+            style={styles.rulerImage}
+            defaultSource={require('../../assets/images/rulers/placeholder.jpg')}
+          />
         </View>
         <View style={styles.rulerInfo}>
           <Text style={styles.rulerName} numberOfLines={1}>{item.name}</Text>

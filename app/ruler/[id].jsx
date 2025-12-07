@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getRulerById, getDenominationsByRuler } from '../../services/database';
 import { useAuthStore } from '../../stores/authStore';
+import { getRulerImage } from '../../utils/images';
 
 export default function RulerScreen() {
   const { id } = useLocalSearchParams();
@@ -77,23 +78,12 @@ export default function RulerScreen() {
       <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: 80 }}>
       {/* Ruler header with image */}
       <View style={styles.headerContainer}>
-        {/* TODO: Добавить изображение правителя в assets/images/rulers/{ruler.id}.jpg */}
         <View style={styles.rulerImageContainer}>
-          {ruler.imageUrl ? (
-            <Image 
-              source={{ 
-                uri: ruler.imageUrl,
-                headers: {
-                  'User-Agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36'
-                }
-              }} 
-              style={styles.rulerImage} 
-            />
-          ) : (
-            <View style={styles.rulerImagePlaceholder}>
-              <Ionicons name="person" size={80} color="#B8860B" />
-            </View>
-          )}
+          <Image 
+            source={getRulerImage(ruler.id, ruler.imageUrl)}
+            style={styles.rulerImage}
+            defaultSource={require('../../assets/images/rulers/placeholder.jpg')}
+          />
         </View>
         
         <View style={styles.rulerTitleContainer}>
