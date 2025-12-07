@@ -21,11 +21,11 @@ const rulerImages = {
   nicholas2: require('../assets/images/rulers/nicholas2.jpg'),
 };
 
-// Локальные изображения номиналов
+// Локальные изображения номиналов (пока закомментированы, файлов нет)
 const denominationImages = {
-  gold: require('../assets/images/denominations/gold.png'),
-  silver: require('../assets/images/denominations/silver.png'),
-  copper: require('../assets/images/denominations/copper.png'),
+  // gold: require('../assets/images/denominations/gold.png'),
+  // silver: require('../assets/images/denominations/silver.png'),
+  // copper: require('../assets/images/denominations/copper.png'),
 };
 
 /**
@@ -71,11 +71,11 @@ export function getCoinImage(rulerId, coinId, side = 'obverse', fallbackUrl = nu
       return { uri: fallbackUrl };
     }
     
-    // Placeholder
-    return require('../assets/images/coins/placeholder.jpg');
+    // Placeholder - пока используем placeholder правителя
+    return require('../assets/images/rulers/placeholder.jpg');
   } catch (error) {
     console.warn(`Image not found: ${rulerId}_${coinId}_${side}`);
-    return require('../assets/images/coins/placeholder.jpg');
+    return require('../assets/images/rulers/placeholder.jpg');
   }
 }
 
@@ -85,7 +85,8 @@ export function getCoinImage(rulerId, coinId, side = 'obverse', fallbackUrl = nu
  * @returns {any} - Image source
  */
 export function getDenominationImage(metal) {
-  return denominationImages[metal] || denominationImages.copper;
+  // Возвращаем null - иконки номиналов не используются
+  return null;
 }
 
 /**
@@ -96,11 +97,11 @@ export function getDenominationImage(metal) {
 export function getPlaceholderImage(type = 'coin') {
   const placeholders = {
     ruler: require('../assets/images/rulers/placeholder.jpg'),
-    coin: require('../assets/images/coins/placeholder.jpg'),
-    denomination: require('../assets/images/denominations/placeholder.png'),
+    // coin: require('../assets/images/coins/placeholder.jpg'),
+    // denomination: require('../assets/images/denominations/placeholder.png'),
   };
   
-  return placeholders[type] || placeholders.coin;
+  return placeholders[type] || placeholders.ruler;
 }
 
 /**

@@ -71,11 +71,11 @@ export default function RulerScreen() {
     );
   }
 
-  const bottomPadding = Platform.OS === 'android' ? Math.max(insets.bottom, 48) : insets.bottom;
+  const bottomPadding = Platform.OS === 'android' ? Math.max(insets.bottom, 80) : insets.bottom + 20;
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: 80 }}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: bottomPadding }}>
       {/* Ruler header with image */}
       <View style={styles.headerContainer}>
         <View style={styles.rulerImageContainer}>
@@ -144,7 +144,6 @@ export default function RulerScreen() {
                 style={styles.denominationCard}
                 onPress={() => router.push(`/denomination/${id}/${denom.type}`)}
               >
-                {/* TODO: Добавить иконку номинала в assets/images/denominations/{denom.type}.png */}
                 <View style={[styles.denominationIcon, { backgroundColor: icon.color + '20' }]}>
                   <Ionicons name={icon.name} size={32} color={icon.color} />
                 </View>

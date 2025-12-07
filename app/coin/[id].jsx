@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCoinById, addToCollection, isInCollection, removeFromCollection } from '../../services/database';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -18,6 +19,7 @@ export default function CoinDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const isGuest = useAuthStore((state) => state.isGuest);
+  const insets = useSafeAreaInsets();
   
   const [coin, setCoin] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -119,8 +121,14 @@ export default function CoinDetailScreen() {
     );
   }
 
+  const bottomPadding = Platform.OS === 'android' ? Math.max(insets.bottom, 80) : insets.bottom + 20;
+
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={{ paddingBottom: owned ? 20 : bottomPadding + 80 }}
+      >
 
       {/* Coin images */}
       <View style={styles.imagesContainer}>
@@ -263,9 +271,11 @@ export default function CoinDetailScreen() {
         </View>
       )}
 
-      {/* Action buttons */}
+      </ScrollView>
+
+      {/* Fixed action buttons */}
       {!owned && (
-        <View style={styles.actionsContainer}>
+        <View style={[styles.fixedActionsContainer, { paddingBottom: bottomPadding }]}>
           <TouchableOpacity
             style={styles.addButton}
             onPress={handleAddToCollection}
@@ -284,9 +294,7 @@ export default function CoinDetailScreen() {
           )}
         </View>
       )}
-
-      <View style={styles.bottomPadding} />
-    </ScrollView>
+    </View>
   );
 }
 
@@ -440,6 +448,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     lineHeight: 22,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  fixedActionsContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    padding: 20,
+    paddingTop: 15,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
   },
   actionsContainer: {
     flexDirection: 'row',

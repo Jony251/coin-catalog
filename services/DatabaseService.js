@@ -56,7 +56,39 @@ class DatabaseService {
    * Инициализация SQLite
    */
   async _initializeSQLite() {
-    this.db = await SQLite.openDatabaseAsync('coin_catalog.db');
+    // ВРЕМЕННОЕ РЕШЕНИЕ: Удаляем БД принудительно для миграции
+    try {
+      const db = await SQLite.openDatabaseAsync('coin_catalog.db');
+      
+      // Проверяем версию
+      try {
+        const versionRow = await db.getFirstAsync(
+          'SELECT value FROM db_metadata WHERE key = ?', 
+          ['version']
+        );
+        const currentVersion = versionRow ? parseInt(versionRow.value) : 0;
+        
+        // Если версия меньше 5 - удаляем все таблицы
+        if (currentVersion < 5) {
+          console.log(`⚠️ Old DB version ${currentVersion} detected. Dropping all tables...`);
+          await db.runAsync('DROP TABLE IF EXISTS user_coins');
+          await db.runAsync('DROP TABLE IF EXISTS catalog_coins');
+          await db.runAsync('DROP TABLE IF EXISTS rulers');
+          await db.runAsync('DROP TABLE IF EXISTS periods');
+          await db.runAsync('DROP TABLE IF EXISTS countries');
+          await db.runAsync('DROP TABLE IF EXISTS db_metadata');
+          console.log('✅ Old tables dropped');
+        }
+      } catch (e) {
+        // Таблица не существует - это нормально
+        console.log('No existing metadata table');
+      }
+      
+      this.db = db;
+    } catch (error) {
+      console.log('Error checking DB version:', error);
+      this.db = await SQLite.openDatabaseAsync('coin_catalog.db');
+    }
     
     // Создаём таблицы
     await this._createTables();
@@ -155,7 +187,7 @@ class DatabaseService {
    * Проверка версии БД и заполнение данными
    */
   async _checkAndSeedDatabase() {
-    const DB_VERSION = 4; // Исправлена схема: periodId теперь опциональный
+    const DB_VERSION = 5; // Принудительная пересборка БД
     
     const versionRow = await this.db.getFirstAsync(
       'SELECT value FROM db_metadata WHERE key = ?', 
@@ -174,11 +206,12 @@ class DatabaseService {
    */
   async _migrateDatabase(fromVersion, toVersion) {
     try {
-      // Для версии 4 - полное пересоздание БД
+      // Для версии 4+ - полное пересоздание БД
       if (toVersion >= 4) {
-        console.log('Performing full database recreation for v4...');
+        console.log(`Performing full database recreation for v${toVersion}...`);
         
         // Удаляем все таблицы
+        await this.db.runAsync('DROP TABLE IF EXISTS user_coins');
         await this.db.runAsync('DROP TABLE IF EXISTS catalog_coins');
         await this.db.runAsync('DROP TABLE IF EXISTS rulers');
         await this.db.runAsync('DROP TABLE IF EXISTS periods');
