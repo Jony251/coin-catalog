@@ -82,7 +82,6 @@ export default function RulerScreen() {
           <Image 
             source={getRulerImage(ruler.id, ruler.imageUrl)}
             style={styles.rulerImage}
-            defaultSource={require('../../assets/images/rulers/placeholder.jpg')}
           />
         </View>
         

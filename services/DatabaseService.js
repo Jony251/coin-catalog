@@ -173,23 +173,23 @@ class DatabaseService {
    * Миграция базы данных
    */
   async _migrateDatabase(fromVersion, toVersion) {
-    await this.db.execAsync('BEGIN TRANSACTION');
-    
     try {
-      // Пересоздаём таблицы для версии 4
+      // Для версии 4 - полное пересоздание БД
       if (toVersion >= 4) {
+        console.log('Performing full database recreation for v4...');
+        
+        // Удаляем все таблицы
         await this.db.runAsync('DROP TABLE IF EXISTS catalog_coins');
         await this.db.runAsync('DROP TABLE IF EXISTS rulers');
         await this.db.runAsync('DROP TABLE IF EXISTS periods');
         await this.db.runAsync('DROP TABLE IF EXISTS countries');
+        await this.db.runAsync('DROP TABLE IF EXISTS db_metadata');
         
         // Создаём таблицы заново
         await this._createTables();
-      } else {
-        // Очищаем старые данные
-        await this.db.runAsync('DELETE FROM catalog_coins');
-        await this.db.runAsync('DELETE FROM rulers');
       }
+      
+      await this.db.execAsync('BEGIN TRANSACTION');
       
       // Создаём новую структуру
       await this._seedCountriesAndPeriods();

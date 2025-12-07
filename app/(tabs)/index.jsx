@@ -104,7 +104,6 @@ export default function CatalogScreen() {
           <Image 
             source={imageSource}
             style={styles.rulerImage}
-            defaultSource={require('../../assets/images/rulers/placeholder.jpg')}
           />
         </View>
         <View style={styles.rulerInfo}>
